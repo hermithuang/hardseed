@@ -1,4 +1,4 @@
-// last modified 
+// last modified
 
 #include "CaoliuTopicWebpage.h"
 #include <iostream>
@@ -14,7 +14,7 @@ static bool
 parsePicturesUrlsHelper ( const string& webpage_txt,
                           vector<string>& pictures_urls_list,
                           const string& keyword_begin,
-                          const string& keyword_end ) 
+                          const string& keyword_end )
 {
     bool b_ok = false;
 
@@ -27,11 +27,12 @@ parsePicturesUrlsHelper ( const string& webpage_txt,
                                                                            start_pos );
         string pic_url = pair_tmp.first;
         if (pic_url.empty()) {
+            cout << "fetchStringBetweenKeywords not found" << endl;
             break;
         }
         start_pos = pair_tmp.second;
         b_ok = true;
-        
+
         // there are some bad picture-webspaces and logo pci, ignore them
         bool b_ignore_url = false;
         static const vector<string> ignore_urls_keywords_list = {
@@ -50,10 +51,10 @@ parsePicturesUrlsHelper ( const string& webpage_txt,
                 break;
             }
         }
-        if (b_ignore_url) {
+        if (b_ignore_url) {  //找到这个url是垃圾pic,忽略
             continue;
         }
-        
+        cout << "pic url is " << pic_url << endl;
         // save the picture URL
         pictures_urls_list.push_back(pic_url);
     }
@@ -62,7 +63,7 @@ parsePicturesUrlsHelper ( const string& webpage_txt,
 }
 
 static bool
-parsePicturesUrls (const string& webpage_txt, vector<string>& pictures_urls_list) 
+parsePicturesUrls (const string& webpage_txt, vector<string>& pictures_urls_list)
 {
     pictures_urls_list.clear();
 
@@ -73,16 +74,16 @@ parsePicturesUrls (const string& webpage_txt, vector<string>& pictures_urls_list
                                                                        keyword_toptip_begin,
                                                                        keyword_toptip_end );
     string toptip = pair_tmp.first;
-    if (toptip.empty()) {
-        cerr << "ERROR! there is no toptip. " << endl;
-        return(false);
-    }
+//    if (toptip.empty()) {
+//        cerr << "ERROR! there is no toptip. " << endl;
+//        return(false);
+//    }
 
     // the list may be on the webpage at the same time
-    static const vector<pair<string, string>> begin_and_end_keywords_list = { make_pair("<img src='", "'"), 
+    static const vector<pair<string, string>> begin_and_end_keywords_list = { make_pair("<img src='", "'"),
                                                                               make_pair("input type='image' src='", "'"),
                                                                               make_pair("<input src='", "'") };
-    
+
     bool b_ok = false;
     for (const auto& e : begin_and_end_keywords_list) {
         if (parsePicturesUrlsHelper(toptip, pictures_urls_list, e.first, e.second)) {
@@ -90,12 +91,12 @@ parsePicturesUrls (const string& webpage_txt, vector<string>& pictures_urls_list
         }
     }
 
-
+    cout << "parsePicturesUrls result " << b_ok << endl;
     return(b_ok);
 }
 
 static bool
-parseSeedUrl (const string& webpage_txt, string& seed_url) 
+parseSeedUrl (const string& webpage_txt, string& seed_url)
 {
     static const vector<string> keywords_seed_begin_list = { "http://www.rmdown.com/link.php?hash=",
                                                              "http://rmdown.com/link.php?hash=",
@@ -104,7 +105,7 @@ parseSeedUrl (const string& webpage_txt, string& seed_url)
     for (const auto& e : keywords_seed_begin_list) {
         const string& keyword_seed_begin = e;
         static const string keyword_seed_end("</a>");
-        
+
         const pair<string, size_t>& pair_tmp = fetchStringBetweenKeywords( webpage_txt,
                                                                            keyword_seed_begin,
                                                                            keyword_seed_end );
@@ -128,4 +129,3 @@ CaoliuTopicWebpage::~CaoliuTopicWebpage ()
 {
     ;
 }
-

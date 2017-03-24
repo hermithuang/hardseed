@@ -1,4 +1,4 @@
-// last modified 
+// last modified
 
 #include "SeedWebpage.h"
 #include <iostream>
@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 using namespace std;
-
+//构造时load网页，然后根据这个网页torrent文件放在什么里边,构造post_sections_list_
 SeedWebpage::SeedWebpage ( const string& url,
                            const string& proxy_addr,
                            const string& post_url,
@@ -18,7 +18,8 @@ SeedWebpage::SeedWebpage ( const string& url,
              << url << "\"" << endl;
         return;
     }
-
+    cout << getTxt() << endl;
+    cout << "-------------" << endl;
     // parse the post method multi sections
     parsePostMultiSections(getTxt(), post_sections_list_);
 }
@@ -43,4 +44,3 @@ SeedWebpage::downloadSeed (const string& path, const string& base_name)
 
     return(submitMultiPost(post_url_, seed_filename, post_sections_list_));
 }
-

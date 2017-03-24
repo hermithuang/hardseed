@@ -1,4 +1,4 @@
-// last modified 
+// last modified
 
 #pragma once
 
@@ -14,13 +14,13 @@ class TopicWebpage : public Webpage
 {
     public:
         // callback function for parse the URLs of av pictures
-        typedef bool (*ParsePicturesUrls) (const string& webpage_txt, vector<string>& pictures_urls_list); 
+        typedef bool (*ParsePicturesUrls) (const string& webpage_txt, vector<string>& pictures_urls_list);
         // callback function for parse the URLs of seed
-        typedef bool (*ParseSeedUrl) (const string& webpage_txt, string& seed_url); 
+        typedef bool (*ParseSeedUrl) (const string& webpage_txt, string& seed_url);
 
     public:
         TopicWebpage ( const string& url,
-                       ParsePicturesUrls parsePicturesUrls,
+                       ParsePicturesUrls parsePicturesUrls,  //两个函数指针
                        ParseSeedUrl parseSeedUrl,
                        const string& proxy_addr,
                        const string& src_charset,
@@ -38,4 +38,3 @@ class TopicWebpage : public Webpage
         string seed_url_;
         vector<string> pictures_urls_list_;
 };
-

@@ -1,4 +1,4 @@
-// last modified 
+// last modified
 
 #include "RmdownSeedWebpage.h"
 #include <iostream>
@@ -8,10 +8,10 @@
 
 
 using namespace std;
-
+//static函数与普通函数作用域不同,仅在本文件。只在当前源文件中使用的函数应该说明为内部函数(static修饰的函数)，内部函数应该在当前源文件中说明和定义。
 static bool
 parsePostMultiSections ( const string& webpage_txt,
-                         vector<pair<string, string>>& post_sections_list ) 
+                         vector<pair<string, string>>& post_sections_list )
 {
     // parse the ref section
     static const string& keyword_ref_section_begin("<INPUT size=58 name=\"ref\" value=\"");
@@ -52,7 +52,7 @@ parsePostMultiSections ( const string& webpage_txt,
 // seed fetch URL. http://www.rmdown.com/ and http://www.xunfs.com/ are
 // the same one website, on the other word, from http://www.rmdown.com/abcd
 // download the seed file same as from http://www.xunfs.com/abcd, so, I need
-// just ONE fetch URL 
+// just ONE fetch URL
 RmdownSeedWebpage::RmdownSeedWebpage (const string& url, const string& proxy_addr)
     : SeedWebpage(url, proxy_addr, "http://www.rmdown.com/download.php", parsePostMultiSections)
 {
@@ -63,4 +63,3 @@ RmdownSeedWebpage::~RmdownSeedWebpage ()
 {
     ;
 }
-

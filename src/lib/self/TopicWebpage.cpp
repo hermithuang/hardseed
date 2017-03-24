@@ -1,4 +1,4 @@
-// last modified 
+// last modified
 
 #include "TopicWebpage.h"
 #include <iostream>
@@ -28,13 +28,13 @@ TopicWebpage::TopicWebpage ( const string& url,
     }
 
     // parse the URLs of av pictures
-    if (!parsePicturesUrls(getTxt(), pictures_urls_list_)) {
+    if (!parsePicturesUrls(getTxt(), pictures_urls_list_)) {    //制造pic list
         //cerr << "WARNING! parsePicturesUrls() failure from " << url << endl;
         ;
     }
 
     // parse the URLs of seed
-    if (!parseSeedUrl(getTxt(), seed_url_)) {
+    if (!parseSeedUrl(getTxt(), seed_url_)) {      //制造seed list
         //cerr << "WARNING! parseSeedUrl() failure from " << url << endl;
         ;
     }
@@ -71,7 +71,7 @@ TopicWebpage::downloadAllPictures ( const string& path,
           i < pictures_urls_list_.size() && sucess_cnt < pictures_max_num;
           ++i ) {
         const string& picture_url = pictures_urls_list_[i];
-        
+
         // make picture postfix name
         //string postfix_name("jpeg"); // sometime get the remote filetype failure, so I set the default postfix
         string postfix_name("");
@@ -87,18 +87,18 @@ TopicWebpage::downloadAllPictures ( const string& path,
             }
             sleep(get_remote_filetype_sleep_second);
         }
-        // neither gif (because gifs almost be AD) nor cannot get the file type, ignore 
+        // neither gif (because gifs almost be AD) nor cannot get the file type, ignore
         if ("gif" == postfix_name || "" == postfix_name) {
             continue;
         }
-        
+
         // download pic
         const string& pic_filename = path + "/" + base_name + "-" + convNumToStr(sucess_cnt) + "." + postfix_name;
         if (downloadFile(picture_url, pic_filename, "", timeout_download_pic)) {
             ++sucess_cnt;
             continue;
         }
-        
+
         //cerr << "WARNING! CANNOT download " << pictures_urls_list_[i] << endl;
         fail_download_pics_urls_list.push_back(pictures_urls_list_[i]);
         remove(pic_filename.c_str());
@@ -107,4 +107,3 @@ TopicWebpage::downloadAllPictures ( const string& path,
 
     return(fail_download_pics_urls_list.empty());
 }
-

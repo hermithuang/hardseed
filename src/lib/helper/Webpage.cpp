@@ -1,4 +1,4 @@
-// last modified 
+// last modified
 
 #include "Webpage.h"
 #include <iostream>
@@ -38,7 +38,7 @@ checkErrLibcurl (const CURLcode curl_code, const char* libcurl_err_info, bool b_
 }
 
 static CURL*
-initLibcurl (const char* libcurl_err_info_buff)
+initLibcurl (const char* libcurl_err_info_buff)   //libcurl相关
 {
     CURL* p_curl = nullptr;
 
@@ -78,7 +78,7 @@ cleanupLibcul (CURL* p_curl)
 
 // check proxy by http://www.ip-adress.com/
 static pair<string, string>
-parseProxyOutIpAndRegionByThirdparty (const string& proxy_addr)
+parseProxyOutIpAndRegionByThirdparty (const string& proxy_addr)  //通过第三方网站获得ip和区域, to modify
 {
     static const string thirdparty("http://www.ip-adress.com/");
     Webpage webpage(thirdparty, "", proxy_addr, 16, 2, 2);
@@ -110,13 +110,13 @@ parseProxyOutIpAndRegionByThirdparty (const string& proxy_addr)
 }
 
 string
-Webpage::checkProxyOutIpByThirdparty (void) const
+Webpage::checkProxyOutIpByThirdparty (void) const   //拿到ip
 {
     return(parseProxyOutIpAndRegionByThirdparty(proxy_addr_).first);
 }
 
 string
-Webpage::checkProxyOutRegionByThirdparty (void) const
+Webpage::checkProxyOutRegionByThirdparty (void) const //拿到区域
 {
     return(parseProxyOutIpAndRegionByThirdparty(proxy_addr_).second);
 }
@@ -159,23 +159,24 @@ Webpage::checkUserAgentByThirdparty (void) const
 // OK, curl_easy_escape() likely do this job, but it's stupid: the function converts
 // all characters that are not a-z, A-Z, 0-9, '-', '.', '_' or '~' to their "URL escaped"
 // version (%NN where NN is a two-digit hexadecimal number), in the other words, it always
-// convert ':', '/', '?', and so on, that's a bad news. 
+// convert ':', '/', '?', and so on, that's a bad news.
 // This is my way to escape URL:
 // 0) split one raw URL string to more sub-string by token chars, such as ':', '/', '='
 // and '?' (may be more);
 // 1) escape all sub-str by curl_easy_escape();
 // 2) splice escaped sub-string to URL.
+// 把url分段，然后转换，然后拼接
 string
-Webpage::escapeUrl (const string& raw_url) const
+Webpage::escapeUrl (const string& raw_url) const     //拿到escaped地址
 {
     // split one raw URL string to more sub-string by token chars
     static const string tokens_list(":/=?&,;%");
     vector<string> splited_substr_list;
     vector<char> appeared_tokens_list;
-    splitStr(raw_url, tokens_list, splited_substr_list, appeared_tokens_list);
+    splitStr(raw_url, tokens_list, splited_substr_list, appeared_tokens_list); //存到vector里了
 
     // escape all sub-string
-    vector<string> escaped_substr_list;
+    vector<string> escaped_substr_list;   //把:/=?&,;%转换后存到这个vector
     for (const auto& e : splited_substr_list) {
         char* p_str_escaped = curl_easy_escape(p_curl_, e.c_str(), 0);
         if (nullptr == p_str_escaped) {
@@ -187,29 +188,33 @@ Webpage::escapeUrl (const string& raw_url) const
 
     // splice escaped sub-string to URL
     string url_escaped;
-    bool b_tokens_first = (string::npos != tokens_list.find(raw_url[0]));
+    bool b_tokens_first = (string::npos != tokens_list.find(raw_url[0]));  //看看第一个是哪个
     for (unsigned i = 0; i < escaped_substr_list.size() && i < appeared_tokens_list.size(); ++i) {
         if (b_tokens_first) {
             url_escaped += appeared_tokens_list[i] + escaped_substr_list[i];
         } else {
             url_escaped += escaped_substr_list[i] + appeared_tokens_list[i];
         } }
-    if (escaped_substr_list.size() > appeared_tokens_list.size()) {
+    if (escaped_substr_list.size() > appeared_tokens_list.size()) {    //尾巴上还有特殊字符
         url_escaped += escaped_substr_list[escaped_substr_list.size() - 1];
     }
 
 
-    return(url_escaped);
+    return(url_escaped);   //拼好了
 }
 
+
+//这个函数对于raw_url，根据header_item类型返回报文内的字符串
+//enum HttpHeader_ {header, type, charset, length, name, modified};
 string
 Webpage::requestHttpHeader_ ( const string& raw_url,
                               HttpHeader_ header_item,
                               const unsigned timeout_second,
                               const unsigned retry_times,
-                              const unsigned retry_sleep_second ) const 
+                              const unsigned retry_sleep_second ) const
 {
     const string random_filename = makeRandomFilename();
+    //cout << random_filename.c_str() << endl;
     FILE* fs_http_header = fopen(random_filename.c_str(), "w");
     if (nullptr == fs_http_header) {
         return("");
@@ -226,8 +231,8 @@ Webpage::requestHttpHeader_ ( const string& raw_url,
     checkErrLibcurl(curl_easy_setopt(p_curl_, CURLOPT_PROXY, proxy_addr_.c_str()), libcurl_err_info_buff_);
     checkErrLibcurl(curl_easy_setopt(p_curl_, CURLOPT_NOBODY, true), libcurl_err_info_buff_); // just request the HTTP header
     checkErrLibcurl(curl_easy_setopt(p_curl_, CURLOPT_WRITEHEADER, fs_http_header), libcurl_err_info_buff_);
-    for (unsigned i = 0; i < retry_times; ++i) {
-        if (checkErrLibcurl(curl_easy_perform(p_curl_), libcurl_err_info_buff_)) {
+    for (unsigned i = 0; i < retry_times; ++i) {  //重试几次
+        if (checkErrLibcurl(curl_easy_perform(p_curl_), libcurl_err_info_buff_)) {   //perform是执行，把http头写到了random_filename里
             break;
         }
         sleep(retry_sleep_second);
@@ -235,7 +240,7 @@ Webpage::requestHttpHeader_ ( const string& raw_url,
 
     // reset, I.E., request HTTP body
     checkErrLibcurl(curl_easy_setopt(p_curl_, CURLOPT_NOBODY, false), libcurl_err_info_buff_);
-    checkErrLibcurl(curl_easy_setopt(p_curl_, CURLOPT_WRITEHEADER, nullptr), libcurl_err_info_buff_); 
+    checkErrLibcurl(curl_easy_setopt(p_curl_, CURLOPT_WRITEHEADER, nullptr), libcurl_err_info_buff_);
     fclose(fs_http_header);
 
     // load the file to memory, and parse HTTP header info
@@ -244,19 +249,31 @@ Webpage::requestHttpHeader_ ( const string& raw_url,
                                                              "Content-Length: ", // file size
                                                              "Content-Disposition: ", // file name
                                                              "Last-Modified: " }; // file modified time
-    ifstream ifs(random_filename);
+    ifstream ifs(random_filename); //从文件里读出来
     string line;
     while (getline(ifs, line)) {
+        // cout << line << endl;
+        /*HTTP/1.1 200 OK
+        Server: nginx/1.9.15
+        Date: Wed, 22 Mar 2017 03:24:47 GMT
+        Content-Type: image/jpeg
+        Content-Length: 185050
+        Connection: keep-alive
+        Last-Modified: Mon, 13 Feb 2017 00:12:35 GMT
+        ETag: "9fc5d74b-2d2da-5485e4df528a1"
+        X-Cache-Status: HIT
+        Accept-Ranges: bytes
+        */
         // load to memory
         http_header += (line + '\n');
-        
+
         // parse HTTP header item
         for (const auto& e : httpheader_keywords_list) {
             const auto item_name_pos = line.find(e);
             if (string::npos == item_name_pos) {
                 continue;
             }
-            
+
             line.pop_back(); // the last char in line is '\r'
             const string& item_content = line.substr(item_name_pos + e.size());
             if ("Content-Type: " == e) {
@@ -278,24 +295,26 @@ Webpage::requestHttpHeader_ ( const string& raw_url,
         }
     }
     ifs.close();
-    remove(random_filename.c_str()); 
+    remove(random_filename.c_str());
 
     // return http header item
     switch (header_item) {
-        case header: 
+        case header:
             return(http_header);
-        case name: 
+        case name:
             return(remote_filename);
-        case type: 
+        case type:
             return(remote_filetype);
-        case charset: 
+        case charset:
             return(remote_filecharset);
-        case length: 
+        case length:
             return(remote_filesize);
-        case modified: 
+        case modified:
             return(remote_filetime);
     }
 }
+
+//各种封装
 
 string
 Webpage::getHttpHeader (const string& url) const
@@ -360,6 +379,7 @@ Webpage::Webpage ( const string& url,
       b_loaded_ok_(false),
       user_agent_(user_agent)
 {
+//    cout << "Webpage is loading " << url_  << endl;
     // set proxy.
     // proxy_addr is made up of protocol, IP and port.
     // [protocol://][IP][:port], e.g.,
@@ -390,7 +410,7 @@ Webpage::Webpage ( const string& url,
                          libcurl_err_info_buff_ );
     }
 
-    //// don't download none-webpage file when construct the obj 
+    //// don't download none-webpage file when construct the obj
     //const string& remote_filetype = getRemoteFiletype(url_);
     //if ("text/html" != remote_filetype && "text/javascript" != remote_filetype) {
         //return;
@@ -398,10 +418,12 @@ Webpage::Webpage ( const string& url,
 
     // download webpage to local file
     const string& localfile = (filename.empty() ? makeRandomFilename() : filename);
+    //把url文件下载下来
     b_loaded_ok_ = download_(url_, localfile, "", timeout_second, retry_times, retry_sleep_second);
+    cout <<  "download_ " << url_ << " result is " << localfile << " " << b_loaded_ok_ << endl;
     if (!b_loaded_ok_) {
         if (filename.empty()) {
-            remove(localfile.c_str()); 
+            remove(localfile.c_str());
         }
         return;
     }
@@ -409,9 +431,15 @@ Webpage::Webpage ( const string& url,
     // 保存获取的 cookies
     struct curl_slist* p_cookies = nullptr;
     checkErrLibcurl(curl_easy_getinfo(p_curl_, CURLINFO_COOKIELIST, &p_cookies), libcurl_err_info_buff_); // enable the cookie engine
-    struct curl_slist* p_cookies_old = p_cookies;;
+    struct curl_slist* p_cookies_old = p_cookies;
     while (p_cookies) {
         cookie_items_list_.push_back(p_cookies->data);
+        //cout << p_cookies->data << endl;
+        /*#HttpOnly_www.ac168.info	FALSE	/	FALSE	1521687054	c1707_lastvisit	0%091490151054%09%2Fbt%2Fthread.php%3Ffid%3D4
+        #HttpOnly_www.ac168.info	FALSE	/	FALSE	1521687054	c1707_lastpos	F4
+        #HttpOnly_www.ac168.info	FALSE	/	FALSE	1521687054	c1707_threadlog	%2C4%2C
+        #HttpOnly_www.ac168.info	FALSE	/	FALSE	1521687054	c1707_ol_offset	42195
+        */
         p_cookies = p_cookies->next;
     }
     curl_slist_free_all(p_cookies_old);
@@ -425,9 +453,9 @@ Webpage::Webpage ( const string& url,
     }
     ifs.close();
 
-    // the caller don't care the loacl file, so delete it
+    // the caller don't care the local file, so delete it
     if (filename.empty()) {
-        remove(localfile.c_str()); 
+        remove(localfile.c_str());
     }
 
     // parse title
@@ -481,11 +509,12 @@ Webpage::getLatestHttpStatusCode (void) const
 bool
 Webpage::isValidLatestHttpStatusCode (void) const
 {
+    //4xx是客户端错误，5xx是服务器端错误
     // HTTP status code, 4XX stand for client error, 5XX for server error,
     // More info http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
     static const char client_error_code = '4', server_error_code = '5';
     const string& latest_http_status_code_str = convNumToStr(latest_http_status_code_);
-    return( client_error_code != latest_http_status_code_str[0] && 
+    return( client_error_code != latest_http_status_code_str[0] &&
             server_error_code != latest_http_status_code_str[0] );
 }
 
@@ -501,8 +530,10 @@ Webpage::download_ ( const string& raw_url,
                      const unsigned retry_sleep_second )
 {
     // deal with raw URL, first unescape html, second escape URL
+
     string url = escapeUrl(unescapeHtml(raw_url));
 
+    //不使用https
     // convert https to http
     static const string keyword_https("https://");
     const auto https_pos = url.find(keyword_https);
@@ -514,6 +545,7 @@ Webpage::download_ ( const string& raw_url,
     // set the target URL
     curl_easy_setopt(p_curl_, CURLOPT_URL, url.c_str());
 
+    //	在HTTP请求头中"Referer: "的内容。
     // set the referer page.
     // note curl_easy_setopt(p_curl_, CURLOPT_REFERER, "") still send referer
     // in HTTP header (empty string ""), if you don't wanna sent referer info,
@@ -525,7 +557,7 @@ Webpage::download_ ( const string& raw_url,
     // low speed to abort.
     // If the speed below the CURLOPT_LOW_SPEED_LIMIT too long time, abort it.
     static const unsigned low_speed_timeout = 4;
-    checkErrLibcurl( curl_easy_setopt(p_curl_, CURLOPT_LOW_SPEED_TIME, low_speed_timeout), 
+    checkErrLibcurl( curl_easy_setopt(p_curl_, CURLOPT_LOW_SPEED_TIME, low_speed_timeout),
                      libcurl_err_info_buff_ );
 
     // ready for downloading webpage to locale tmp file
@@ -534,32 +566,34 @@ Webpage::download_ ( const string& raw_url,
         cerr << "ERROR! Webpage::download_() something happened. Fail to open file " << filename << endl;
         return(false);
     }
+    //把拿到的数据写入fs文件指针指向的文件
     checkErrLibcurl(curl_easy_setopt(p_curl_, CURLOPT_WRITEDATA, fs), libcurl_err_info_buff_);
 
     // download the URL webpage to locale file
     bool b_downloaded = false;
+    //retrys loop
     for (unsigned i = 0; i < retry_times; ++i) {
         // timeout to abort. if current download failured, next time
         // the download timeout increase one timeout_second
-        checkErrLibcurl( curl_easy_setopt(p_curl_, CURLOPT_TIMEOUT, (long)(timeout_second * (i + 1))), 
+        checkErrLibcurl( curl_easy_setopt(p_curl_, CURLOPT_TIMEOUT, (long)(timeout_second * (i + 1))),
                          libcurl_err_info_buff_ );
-        
+
         // download
-        bool b_ok = checkErrLibcurl(curl_easy_perform(p_curl_), libcurl_err_info_buff_);
+        bool b_ok = checkErrLibcurl(curl_easy_perform(p_curl_), libcurl_err_info_buff_);  //下载
         latest_http_status_code_ = parseLatestHttpStatusCode_(); // notice, parseLatestHttpStatusCode_() must
                                                                  // very close every curl_easy_perform(p_curl_)
-        
+
         // notice, even though there is HTTP request status error, libcurl still download
         // web file success, of course, this is not real success, so, I have to check the
         // http status code
         if (b_ok && isValidLatestHttpStatusCode() && (getFileSize(fs) > 0)) {
             b_downloaded = true;
             break;
-        } 
-        
+        }
+
         //cerr << "WARNING! Webpage::download() something happened. Fail to download " << url
              //<< ", sleeping " << retry_sleep_second << " seconds will retry " << i + 1 << ". " << endl;
-        
+
         // if libcurl download internet file failure,
         // the next retry will append data to local file.
         // so, I must clear the filestream by freopen(),
@@ -572,9 +606,8 @@ Webpage::download_ ( const string& raw_url,
         }
         sleep(retry_sleep_second);
     }
+    //retrys loop end
     fclose(fs);
-
-
     return(b_downloaded);
 }
 
@@ -588,7 +621,7 @@ Webpage::setMultiPostSectionsList (const vector<pair<string, string>>& post_sect
     for (const auto& e : post_sections_list) {
         const string& name = e.first;
         const string& content = e.second;
-        
+
         if (curl_formadd( &p_first_section, &p_last_section,
                           CURLFORM_PTRNAME, name.c_str(),
                           CURLFORM_PTRCONTENTS, content.c_str(),
@@ -617,7 +650,10 @@ Webpage::submitMultiPost ( const string& url,
     if (!setMultiPostSectionsList(post_sections_list)) {
         return(false);
     }
-
+//   cout << url_ << endl;  // url_ = url+ ?ref=F3PCeVnSAL
+//   cout << "----------------" << endl;
+//   cout << url << endl;
+//   cout << "++++++++++++++++" << endl;
     bool b_success = download_(url, filename, url_, timeout_second, retry_times, retry_sleep_second);
 
     // TODO. reset CURLOPT_HTTPPOST, are you sure it works?
@@ -640,6 +676,7 @@ Webpage::isLoaded (void) const
     return(b_loaded_ok_);
 }
 
+//把txt_弄到文件里
 bool
 Webpage::saveasFile (const string& filename) const
 {
@@ -650,7 +687,7 @@ Webpage::saveasFile (const string& filename) const
     while (getline(iss_webpage_txt, line)) {
         ofs_webpage << line << "\n";
     }
-    
+
     ofs_webpage.close();
 
     return(true);
@@ -665,9 +702,9 @@ Webpage::convertCharset (const string& src_charset, const string& dest_charset)
     string line;
     iconv_t cd = iconv_open((dest_charset + "//IGNORE").c_str(), src_charset.c_str()); // why "//IGNORE"? When the string "//IGNORE" is
                                                                                        // appended to dest char set, some char that cannot
-                                                                                       // be represented in the target character set will 
+                                                                                       // be represented in the target character set will
                                                                                        // be silently discarded, ohterwise iconv() will
-                                                                                       // stop at this char
+                                                                                       // stop at this char, see 'man iconv'
     while (getline(iss_webpage_txt, line)) {
         line += "\n";
         size_t inbytes_left = line.size();
@@ -676,21 +713,21 @@ Webpage::convertCharset (const string& src_charset, const string& dest_charset)
         char* outbuff = new char [outbytes_left];
         memset(outbuff, '\0', outbytes_left);
         char* p_outbuff = outbuff;
-        
+
         if ((size_t)-1 == iconv(cd, &p_inbuff, &inbytes_left, &p_outbuff, &outbytes_left)) {
             //cerr << "WARNING! iconv() "<< strerror(errno) << endl;
             ;
         }
         dest_charset_str += outbuff;
-        
+
         delete [] outbuff;
     }
-    iconv_close(cd);
+    iconv_close(cd);  //转完了
 
     txt_ = dest_charset_str;
 
     static const string title_keyword_begin("<title>"), title_keyword_end("</title>");
-    title_ = unescapeHtml(fetchStringBetweenKeywords(txt_, title_keyword_begin, title_keyword_end).first);
+    title_ = unescapeHtml(fetchStringBetweenKeywords(txt_, title_keyword_begin, title_keyword_end).first); // title的内容
 
     return(txt_.size());
 }
@@ -701,6 +738,8 @@ Webpage::getTitle (void) const
     return(title_);
 }
 
+//UTF-8最大的一个特点，就是它是一种变长的编码方式。它可以使用1~4个字节表示一个符号，根据不同的符号而变化字节长度。
+//convertUnicodeToUtf8在misc.cpp里
 string
 convertUnicodeTxtToUtf8 (const string& unicode_txt)
 {
@@ -709,22 +748,22 @@ convertUnicodeTxtToUtf8 (const string& unicode_txt)
     size_t unicode_prefix_pos = 0;
     while (true) {
         static const string unicode_prefix("\\u"); // \u
-        
+
         // 查找 \u
-        unicode_prefix_pos = utf8_txt.find(unicode_prefix, unicode_prefix_pos);
-        if (string::npos == unicode_prefix_pos) {
+        unicode_prefix_pos = utf8_txt.find(unicode_prefix, unicode_prefix_pos); //找\\u
+        if (string::npos == unicode_prefix_pos) {  //没找到break
             break;
         }
-        
+
         // 找到的 \u 后至少得有 4 个字符
         if (unicode_prefix_pos + unicode_prefix.length() + 4 >= utf8_txt.length()) {
             cerr << "WARNING! the end unicode incomplete. " << endl;
             break;
         }
-        
+
         // 提取字符串形式的 unicode
         const string unicode_str = utf8_txt.substr(unicode_prefix_pos + unicode_prefix.length(), 4);
-        
+
         // 将字符串形式 unicode 转换为对应数值
         istringstream iss(unicode_str);
         unsigned unicode_hex;
@@ -732,18 +771,18 @@ convertUnicodeTxtToUtf8 (const string& unicode_txt)
             cerr << "WARNING! " << unicode_str << " is not a vaild unicode. " << endl;
             break;
         }
-        
+
         // 将数值的 unicode 转换为数值的 UTF8
         const pair<size_t, unsigned long long> utf8_pair = convertUnicodeToUtf8(unicode_hex);
         const size_t utf8_size = utf8_pair.first;
         const unsigned long long utf8 = utf8_pair.second;
-        
+
         // 将数值的 UTF8 转换为多字节字符串
         char utf8_str[8] = {'\0'};
         for (unsigned i = 0; i < utf8_size; ++i) {
             utf8_str[utf8_size - 1 - i] = char(utf8 >> (i * 8));
         }
-        
+
         // 用 UTF8 多字节字符串替换对应 \u 开头的 unicode 字符串
         utf8_txt.replace(unicode_prefix_pos, unicode_prefix.length() + 4, utf8_str);
     }
@@ -752,6 +791,8 @@ convertUnicodeTxtToUtf8 (const string& unicode_txt)
     return(utf8_txt);
 }
 
+
+//转换回可读版的的html
 string
 unescapeHtml (const string& raw_txt)
 {
@@ -791,7 +832,7 @@ unescapeHtml (const string& raw_txt)
             pos = 0;
             const string& escaped_str = e.first, unescaped_str = e.second;
             pos = unescaped_html_str.find(escaped_str, pos);
-            if (string::npos != pos) {
+            if (string::npos != pos) { //find it
                 unescaped_html_str.replace(pos, escaped_str.size(), unescaped_str);
                 b_find = true;
                 break;
@@ -802,10 +843,8 @@ unescapeHtml (const string& raw_txt)
     return(unescaped_html_str);
 }
 
-const vector<string>& 
+const vector<string>&
 Webpage::getCookies (void) const
 {
     return(cookie_items_list_);
 }
-
-
